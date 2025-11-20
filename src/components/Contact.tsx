@@ -6,7 +6,7 @@ const Contact = () => {
   return (
     <section id="contact" className="py-24 bg-muted/30">
       <div className="container px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Get In <span className="text-primary">Touch</span>
           </h2>
@@ -17,7 +17,7 @@ const Contact = () => {
         
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Card className="border-2">
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-scale-in" style={{ animationDelay: '100ms' }}>
               <CardContent className="pt-8 pb-8 text-center">
                 <div className="bg-primary/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-7 h-7 text-primary" />
@@ -29,7 +29,7 @@ const Contact = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-2">
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-scale-in" style={{ animationDelay: '200ms' }}>
               <CardContent className="pt-8 pb-8 text-center">
                 <div className="bg-primary/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-7 h-7 text-primary" />
@@ -41,7 +41,7 @@ const Contact = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-2">
+            <Card className="border-2 hover:border-accent/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-scale-in" style={{ animationDelay: '300ms' }}>
               <CardContent className="pt-8 pb-8 text-center">
                 <div className="bg-accent/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-7 h-7 text-accent" />
@@ -53,7 +53,7 @@ const Contact = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-2">
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-scale-in" style={{ animationDelay: '400ms' }}>
               <CardContent className="pt-8 pb-8 text-center">
                 <div className="bg-primary/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Mail className="w-7 h-7 text-primary" />
@@ -66,7 +66,7 @@ const Contact = () => {
             </Card>
           </div>
           
-          <Card className="border-2 border-primary/20">
+          <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors duration-300 animate-fade-in" style={{ animationDelay: '600ms' }}>
             <CardContent className="pt-8 pb-8">
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
@@ -99,13 +99,13 @@ const Contact = () => {
                     Contact us today for expert fire protection solutions. Our team is ready to assess your needs and provide a comprehensive quote.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button size="lg" className="w-full sm:w-auto" asChild>
+                    <Button size="lg" className="w-full sm:w-auto hover:scale-105 transition-transform duration-300" asChild>
                       <a href="tel:0619065523">
                         <Phone className="mr-2 h-5 w-5" />
                         Call Now
                       </a>
                     </Button>
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto border-2" asChild>
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 hover:scale-105 transition-transform duration-300" asChild>
                       <a href="mailto:chservicesfire@telkomsa.net">
                         <Mail className="mr-2 h-5 w-5" />
                         Email Us
