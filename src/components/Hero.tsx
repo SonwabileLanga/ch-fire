@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, Calculator } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/fire-safety-hero.jpg";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+    <section id="hero" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-20">
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroImage})` }}
@@ -43,6 +44,17 @@ const Hero = () => {
               onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Our Services
+            </Button>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              className="text-lg h-14 px-8 hover:scale-105 transition-transform duration-300"
+              asChild
+            >
+              <Link to="/quote">
+                <Calculator className="mr-2 h-5 w-5" />
+                Get Instant Quote
+              </Link>
             </Button>
           </div>
         </div>

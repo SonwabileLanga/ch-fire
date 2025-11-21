@@ -36,7 +36,7 @@ const features = [
 
 const WhyChooseUs = () => {
   return (
-    <section className="py-24 bg-background">
+    <section id="why-choose-us" className="py-24 bg-background">
       <div className="container px-4">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">

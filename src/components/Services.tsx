@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Flame, Camera, Droplets, Radio, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Flame, Camera, Droplets, Radio, Lock, Calculator } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const services = [
   {
@@ -77,6 +79,24 @@ const Services = () => {
               Suppression Systems • Hose Binding • Hose Reels • Supply & Installation
             </p>
           </div>
+        </div>
+
+        <div className="mt-16 text-center animate-fade-in" style={{ animationDelay: '1000ms' }}>
+          <Card className="border-2 border-primary/30 bg-gradient-to-r from-primary/10 to-accent/10 max-w-2xl mx-auto">
+            <CardContent className="pt-8 pb-8">
+              <Calculator className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h3 className="text-2xl font-bold mb-3">Get an Instant Quote</h3>
+              <p className="text-muted-foreground mb-6">
+                Use our interactive calculator to get an instant price estimate for your fire protection needs
+              </p>
+              <Button size="lg" asChild className="hover:scale-105 transition-transform duration-300">
+                <Link to="/quote">
+                  <Calculator className="mr-2 h-5 w-5" />
+                  Calculate Your Quote
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
