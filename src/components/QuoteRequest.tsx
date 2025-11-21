@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calculator, CheckCircle, Building2, MapPin, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { sendQuoteEmail } from "@/lib/emailService";
 
 const quoteSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -58,8 +59,32 @@ const QuoteRequest = () => {
     },
   });
 
-  const onSubmit = (data: QuoteFormValues) => {
+  const onSubmit = async (data: QuoteFormValues) => {
     console.log("Quote request submitted:", data);
+    
+    // Send email via Resend
+    const emailResult = await sendQuoteEmail({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      company: data.company,
+      propertyType: data.propertyType,
+      serviceType: data.serviceType,
+      propertySize: data.propertySize,
+      address: data.address,
+      city: data.city,
+      postalCode: data.postalCode,
+      urgency: data.urgency,
+      budget: data.budget,
+      timeline: data.timeline,
+      additionalInfo: data.additionalInfo,
+    });
+
+    if (emailResult.success) {
+      toast.success("Quote request sent! We'll contact you within 24 hours.");
+    } else {
+      toast.error("Quote request submitted, but email notification failed. We'll still contact you.");
+    }
     
     // Create detailed quote message
     const message = `*New Quote Request*\n\n*Contact Information:*\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}${data.company ? `\nCompany: ${data.company}` : ''}\n\n*Property Details:*\nType: ${data.propertyType}\nSize: ${data.propertySize}\nAddress: ${data.address}\nCity: ${data.city}\nPostal Code: ${data.postalCode}\n\n*Service Request:*\nService Type: ${data.serviceType}\nUrgency: ${data.urgency}${data.budget ? `\nBudget: ${data.budget}` : ''}${data.timeline ? `\nTimeline: ${data.timeline}` : ''}\n\n${data.additionalInfo ? `*Additional Information:*\n${data.additionalInfo}` : ''}`;
@@ -68,7 +93,6 @@ const QuoteRequest = () => {
     window.open(whatsappUrl, '_blank');
     
     setIsSubmitted(true);
-    toast.success("Quote request sent! We'll contact you within 24 hours.");
     form.reset();
     
     setTimeout(() => setIsSubmitted(false), 5000);

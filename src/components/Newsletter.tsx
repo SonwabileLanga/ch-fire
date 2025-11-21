@@ -4,18 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { sendNewsletterEmail } from "@/lib/emailService";
 
 const Newsletter = () => {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      setIsSubscribed(true);
-      toast.success("Thank you for subscribing to our newsletter!");
-      setEmail("");
-      setTimeout(() => setIsSubscribed(false), 3000);
+      // Send email via Resend
+      const emailResult = await sendNewsletterEmail({ email });
+      
+      if (emailResult.success) {
+        setIsSubscribed(true);
+        toast.success("Thank you for subscribing to our newsletter!");
+        setEmail("");
+        setTimeout(() => setIsSubscribed(false), 3000);
+      } else {
+        toast.error("Subscription failed. Please try again.");
+      }
     }
   };
 

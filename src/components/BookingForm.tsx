@@ -14,6 +14,7 @@ import { CalendarIcon, Clock, Phone, Mail, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { sendBookingEmail } from "@/lib/emailService";
 
 const bookingSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -45,8 +46,26 @@ const BookingForm = () => {
     },
   });
 
-  const onSubmit = (data: BookingFormValues) => {
+  const onSubmit = async (data: BookingFormValues) => {
     console.log("Booking submitted:", data);
+    
+    // Send email via Resend
+    const emailResult = await sendBookingEmail({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      service: data.service,
+      date: format(data.date, "PPP"),
+      time: data.time,
+      address: data.address,
+      message: data.message,
+    });
+
+    if (emailResult.success) {
+      toast.success("Booking request sent! We'll contact you shortly.");
+    } else {
+      toast.error("Booking submitted, but email notification failed. We'll still contact you.");
+    }
     
     // Create WhatsApp message
     const message = `*New Service Booking*\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nService: ${data.service}\nPreferred Date: ${format(data.date, "PPP")}\nPreferred Time: ${data.time}\nAddress: ${data.address}\n${data.message ? `\nAdditional Notes: ${data.message}` : ''}`;
@@ -55,7 +74,6 @@ const BookingForm = () => {
     window.open(whatsappUrl, '_blank');
     
     setIsSubmitted(true);
-    toast.success("Booking request sent! We'll contact you shortly.");
     form.reset();
     
     setTimeout(() => setIsSubmitted(false), 5000);
