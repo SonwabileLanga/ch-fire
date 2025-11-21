@@ -1,4 +1,6 @@
 // Using Resend REST API for browser compatibility
+// Note: If you encounter CORS errors, you may need to create a backend API endpoint
+// or use Resend's server-side SDK instead
 const RESEND_API_KEY = 're_V8PPbGSN_HiCcywAqhbmD1M4eNwNdTy8H';
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
@@ -10,30 +12,44 @@ const TO_EMAIL = 'langasonwabile1993@gmail.com';
 // Helper function to send email via Resend REST API
 const sendEmail = async (to: string[], subject: string, html: string, replyTo?: string) => {
   try {
+    const payload = {
+      from: FROM_EMAIL,
+      to: to,
+      subject: subject,
+      html: html,
+    };
+
+    // Add reply_to only if provided
+    if (replyTo) {
+      payload.reply_to = replyTo;
+    }
+
     const response = await fetch(RESEND_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: to,
-        subject: subject,
-        html: html,
-        reply_to: replyTo || FROM_EMAIL,
-      }),
+      body: JSON.stringify(payload),
     });
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to send email');
+      console.error('Resend API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: responseData,
+      });
+      throw new Error(responseData.message || responseData.error?.message || 'Failed to send email');
     }
 
-    return await response.json();
-  } catch (error) {
+    console.log('Email sent successfully:', responseData);
+    return responseData;
+  } catch (error: any) {
     console.error('Email API error:', error);
-    throw error;
+    // Return more detailed error information
+    throw new Error(error.message || 'Failed to send email. Please check console for details.');
   }
 };
 
@@ -89,17 +105,43 @@ export const sendBookingEmail = async (data: BookingEmailData) => {
       <p><em>This email was sent from the CH Fire Services website booking form.</em></p>
     `;
 
-    const result = await sendEmail(
-      [TO_EMAIL, data.email],
+    // Send to admin first
+    const adminResult = await sendEmail(
+      [TO_EMAIL],
       `New Service Booking: ${data.service}`,
       html,
       data.email
     );
 
-    return { success: true, data: result };
-  } catch (error) {
+    // Then send confirmation to customer
+    const customerHtml = `
+      <h2>Thank You for Your Booking Request!</h2>
+      <p>Dear ${data.name},</p>
+      <p>We have received your service booking request and will contact you shortly to confirm the details.</p>
+      <h3>Your Booking Details:</h3>
+      <p><strong>Service Type:</strong> ${data.service}</p>
+      <p><strong>Preferred Date:</strong> ${data.date}</p>
+      <p><strong>Preferred Time:</strong> ${data.time}</p>
+      <p><strong>Service Address:</strong> ${data.address}</p>
+      <p>Our team will review your request and get back to you within 24 hours.</p>
+      <hr>
+      <p><em>CH Fire Services - Professional Fire Protection Solutions</em></p>
+    `;
+
+    try {
+      await sendEmail(
+        [data.email],
+        `Booking Confirmation: ${data.service}`,
+        customerHtml
+      );
+    } catch (customerError) {
+      console.warn('Failed to send customer confirmation, but admin email was sent:', customerError);
+    }
+
+    return { success: true, data: adminResult };
+  } catch (error: any) {
     console.error('Error sending booking email:', error);
-    return { success: false, error };
+    return { success: false, error: error.message || 'Unknown error' };
   }
 };
 
@@ -131,17 +173,43 @@ export const sendQuoteEmail = async (data: QuoteEmailData) => {
       <p><em>This email was sent from the CH Fire Services website quote request form.</em></p>
     `;
 
-    const result = await sendEmail(
-      [TO_EMAIL, data.email],
+    // Send to admin first
+    const adminResult = await sendEmail(
+      [TO_EMAIL],
       `New Quote Request: ${data.serviceType}`,
       html,
       data.email
     );
 
-    return { success: true, data: result };
-  } catch (error) {
+    // Then send confirmation to customer
+    const customerHtml = `
+      <h2>Thank You for Your Quote Request!</h2>
+      <p>Dear ${data.name},</p>
+      <p>We have received your quote request and will prepare a detailed estimate for you.</p>
+      <h3>Your Request Details:</h3>
+      <p><strong>Service Type:</strong> ${data.serviceType}</p>
+      <p><strong>Property Type:</strong> ${data.propertyType}</p>
+      <p><strong>Property Size:</strong> ${data.propertySize}</p>
+      <p><strong>Urgency:</strong> ${data.urgency}</p>
+      <p>Our team will review your requirements and send you a detailed quote within 24 hours.</p>
+      <hr>
+      <p><em>CH Fire Services - Professional Fire Protection Solutions</em></p>
+    `;
+
+    try {
+      await sendEmail(
+        [data.email],
+        `Quote Request Confirmation`,
+        customerHtml
+      );
+    } catch (customerError) {
+      console.warn('Failed to send customer confirmation, but admin email was sent:', customerError);
+    }
+
+    return { success: true, data: adminResult };
+  } catch (error: any) {
     console.error('Error sending quote email:', error);
-    return { success: false, error };
+    return { success: false, error: error.message || 'Unknown error' };
   }
 };
 

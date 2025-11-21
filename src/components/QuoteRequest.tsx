@@ -83,7 +83,8 @@ const QuoteRequest = () => {
     if (emailResult.success) {
       toast.success("Quote request sent! We'll contact you within 24 hours.");
     } else {
-      toast.error("Quote request submitted, but email notification failed. We'll still contact you.");
+      console.error("Email error details:", emailResult.error);
+      toast.error(`Email notification failed: ${emailResult.error || 'Unknown error'}. WhatsApp message sent instead.`);
     }
     
     // Create detailed quote message

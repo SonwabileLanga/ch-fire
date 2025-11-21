@@ -64,7 +64,8 @@ const BookingForm = () => {
     if (emailResult.success) {
       toast.success("Booking request sent! We'll contact you shortly.");
     } else {
-      toast.error("Booking submitted, but email notification failed. We'll still contact you.");
+      console.error("Email error details:", emailResult.error);
+      toast.error(`Email notification failed: ${emailResult.error || 'Unknown error'}. WhatsApp message sent instead.`);
     }
     
     // Create WhatsApp message
