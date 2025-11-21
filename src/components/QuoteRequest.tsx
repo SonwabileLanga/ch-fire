@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Calculator, CheckCircle, Building2, MapPin, Phone, Mail } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Calculator, CheckCircle, Building2, MapPin, Phone, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { sendQuoteEmail } from "@/lib/emailService";
 
@@ -37,6 +39,7 @@ type QuoteFormValues = z.infer<typeof quoteSchema>;
 
 const QuoteRequest = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [sendMethod, setSendMethod] = useState<"email" | "whatsapp">("email");
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
@@ -62,48 +65,48 @@ const QuoteRequest = () => {
   const onSubmit = async (data: QuoteFormValues) => {
     console.log("Quote request submitted:", data);
     
-    // Create detailed quote message for WhatsApp (always send this)
-    const whatsappMessage = `*New Quote Request*\n\n*Contact Information:*\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}${data.company ? `\nCompany: ${data.company}` : ''}\n\n*Property Details:*\nType: ${data.propertyType}\nSize: ${data.propertySize}\nAddress: ${data.address}\nCity: ${data.city}\nPostal Code: ${data.postalCode}\n\n*Service Request:*\nService Type: ${data.serviceType}\nUrgency: ${data.urgency}${data.budget ? `\nBudget: ${data.budget}` : ''}${data.timeline ? `\nTimeline: ${data.timeline}` : ''}\n\n${data.additionalInfo ? `*Additional Information:*\n${data.additionalInfo}` : ''}`;
-    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
-    
-    // Try to send email via Resend (non-blocking)
-    try {
-      const emailResult = await sendQuoteEmail({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        company: data.company,
-        propertyType: data.propertyType,
-        serviceType: data.serviceType,
-        propertySize: data.propertySize,
-        address: data.address,
-        city: data.city,
-        postalCode: data.postalCode,
-        urgency: data.urgency,
-        budget: data.budget,
-        timeline: data.timeline,
-        additionalInfo: data.additionalInfo,
-      });
+    if (sendMethod === "email") {
+      // Send via Resend Email API
+      try {
+        const emailResult = await sendQuoteEmail({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          company: data.company,
+          propertyType: data.propertyType,
+          serviceType: data.serviceType,
+          propertySize: data.propertySize,
+          address: data.address,
+          city: data.city,
+          postalCode: data.postalCode,
+          urgency: data.urgency,
+          budget: data.budget,
+          timeline: data.timeline,
+          additionalInfo: data.additionalInfo,
+        });
 
-      if (emailResult.success) {
-        toast.success("Quote request sent via email and WhatsApp! We'll contact you within 24 hours.");
-      } else {
-        console.warn("Email notification failed, but continuing with WhatsApp:", emailResult.error);
-        toast.success("Quote request sent via WhatsApp! We'll contact you within 24 hours.");
+        if (emailResult.success) {
+          toast.success("Quote request sent via email! We'll contact you within 24 hours.");
+          setIsSubmitted(true);
+          form.reset();
+          setTimeout(() => setIsSubmitted(false), 5000);
+        } else {
+          toast.error(`Email failed: ${emailResult.error || 'Unknown error'}. Please try WhatsApp option.`);
+        }
+      } catch (emailError: any) {
+        console.error("Email error:", emailError);
+        toast.error(`Email failed: ${emailError.message || 'Unknown error'}. Please try WhatsApp option.`);
       }
-    } catch (emailError: any) {
-      console.warn("Email error (non-critical, continuing):", emailError);
-      // Don't show error toast, just continue with WhatsApp
-      toast.success("Quote request sent via WhatsApp! We'll contact you within 24 hours.");
+    } else {
+      // Send via WhatsApp
+      const whatsappMessage = `*New Quote Request*\n\n*Contact Information:*\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}${data.company ? `\nCompany: ${data.company}` : ''}\n\n*Property Details:*\nType: ${data.propertyType}\nSize: ${data.propertySize}\nAddress: ${data.address}\nCity: ${data.city}\nPostal Code: ${data.postalCode}\n\n*Service Request:*\nService Type: ${data.serviceType}\nUrgency: ${data.urgency}${data.budget ? `\nBudget: ${data.budget}` : ''}${data.timeline ? `\nTimeline: ${data.timeline}` : ''}\n\n${data.additionalInfo ? `*Additional Information:*\n${data.additionalInfo}` : ''}`;
+      const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
+      window.open(whatsappUrl, '_blank');
+      toast.success("Opening WhatsApp to send your quote request...");
+      setIsSubmitted(true);
+      form.reset();
+      setTimeout(() => setIsSubmitted(false), 5000);
     }
-    
-    // Always open WhatsApp
-    window.open(whatsappUrl, '_blank');
-    
-    setIsSubmitted(true);
-    form.reset();
-    
-    setTimeout(() => setIsSubmitted(false), 5000);
   };
 
   return (
@@ -493,13 +496,55 @@ const QuoteRequest = () => {
                       )}
                     />
 
+                    <div className="bg-primary/5 p-6 rounded-lg border-2 border-primary/20">
+                      <h4 className="font-bold mb-4 flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-primary" />
+                        How would you like to send your request?
+                      </h4>
+                      <RadioGroup 
+                        value={sendMethod} 
+                        onValueChange={(value) => setSendMethod(value as "email" | "whatsapp")}
+                        className="space-y-3"
+                      >
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+                          <RadioGroupItem value="email" id="quote-email" />
+                          <Label htmlFor="quote-email" className="flex-1 cursor-pointer flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-primary" />
+                            <div>
+                              <div className="font-semibold">Send via Email (Recommended)</div>
+                              <div className="text-sm text-muted-foreground">We'll send you a confirmation email</div>
+                            </div>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border-2 border-muted hover:border-primary/20 transition-colors cursor-pointer">
+                          <RadioGroupItem value="whatsapp" id="quote-whatsapp" />
+                          <Label htmlFor="quote-whatsapp" className="flex-1 cursor-pointer flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-semibold">Send via WhatsApp</div>
+                              <div className="text-sm text-muted-foreground">Opens WhatsApp to send your message</div>
+                            </div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
                     <Button 
                       type="submit" 
                       size="lg" 
                       className="w-full text-lg h-14 hover:scale-105 transition-transform duration-300"
                     >
-                      <Calculator className="mr-2 h-5 w-5" />
-                      Request Free Quote
+                      {sendMethod === "email" ? (
+                        <>
+                          <Mail className="mr-2 h-5 w-5" />
+                          Request Quote via Email
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle className="mr-2 h-5 w-5" />
+                          Send via WhatsApp
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Form>

@@ -10,7 +10,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { CalendarIcon, Clock, Phone, Mail, CheckCircle } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { CalendarIcon, Clock, Phone, Mail, CheckCircle, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -33,6 +35,7 @@ type BookingFormValues = z.infer<typeof bookingSchema>;
 
 const BookingForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [sendMethod, setSendMethod] = useState<"email" | "whatsapp">("email");
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
@@ -49,42 +52,42 @@ const BookingForm = () => {
   const onSubmit = async (data: BookingFormValues) => {
     console.log("Booking submitted:", data);
     
-    // Create WhatsApp message (always send this)
-    const whatsappMessage = `*New Service Booking*\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nService: ${data.service}\nPreferred Date: ${format(data.date, "PPP")}\nPreferred Time: ${data.time}\nAddress: ${data.address}\n${data.message ? `\nAdditional Notes: ${data.message}` : ''}`;
-    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
-    
-    // Try to send email via Resend (non-blocking)
-    try {
-      const emailResult = await sendBookingEmail({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        service: data.service,
-        date: format(data.date, "PPP"),
-        time: data.time,
-        address: data.address,
-        message: data.message,
-      });
+    if (sendMethod === "email") {
+      // Send via Resend Email API
+      try {
+        const emailResult = await sendBookingEmail({
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          service: data.service,
+          date: format(data.date, "PPP"),
+          time: data.time,
+          address: data.address,
+          message: data.message,
+        });
 
-      if (emailResult.success) {
-        toast.success("Booking request sent via email and WhatsApp! We'll contact you shortly.");
-      } else {
-        console.warn("Email notification failed, but continuing with WhatsApp:", emailResult.error);
-        toast.success("Booking request sent via WhatsApp! We'll contact you shortly.");
+        if (emailResult.success) {
+          toast.success("Booking request sent via email! We'll contact you shortly.");
+          setIsSubmitted(true);
+          form.reset();
+          setTimeout(() => setIsSubmitted(false), 5000);
+        } else {
+          toast.error(`Email failed: ${emailResult.error || 'Unknown error'}. Please try WhatsApp option.`);
+        }
+      } catch (emailError: any) {
+        console.error("Email error:", emailError);
+        toast.error(`Email failed: ${emailError.message || 'Unknown error'}. Please try WhatsApp option.`);
       }
-    } catch (emailError: any) {
-      console.warn("Email error (non-critical, continuing):", emailError);
-      // Don't show error toast, just continue with WhatsApp
-      toast.success("Booking request sent via WhatsApp! We'll contact you shortly.");
+    } else {
+      // Send via WhatsApp
+      const whatsappMessage = `*New Service Booking*\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nService: ${data.service}\nPreferred Date: ${format(data.date, "PPP")}\nPreferred Time: ${data.time}\nAddress: ${data.address}\n${data.message ? `\nAdditional Notes: ${data.message}` : ''}`;
+      const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
+      window.open(whatsappUrl, '_blank');
+      toast.success("Opening WhatsApp to send your booking request...");
+      setIsSubmitted(true);
+      form.reset();
+      setTimeout(() => setIsSubmitted(false), 5000);
     }
-    
-    // Always open WhatsApp
-    window.open(whatsappUrl, '_blank');
-    
-    setIsSubmitted(true);
-    form.reset();
-    
-    setTimeout(() => setIsSubmitted(false), 5000);
   };
 
   const timeSlots = [
@@ -320,12 +323,55 @@ const BookingForm = () => {
                       </div>
                     </div>
 
+                    <div className="bg-primary/5 p-6 rounded-lg border-2 border-primary/20">
+                      <h4 className="font-bold mb-4 flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-primary" />
+                        How would you like to send your request?
+                      </h4>
+                      <RadioGroup 
+                        value={sendMethod} 
+                        onValueChange={(value) => setSendMethod(value as "email" | "whatsapp")}
+                        className="space-y-3"
+                      >
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+                          <RadioGroupItem value="email" id="email" />
+                          <Label htmlFor="email" className="flex-1 cursor-pointer flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-primary" />
+                            <div>
+                              <div className="font-semibold">Send via Email (Recommended)</div>
+                              <div className="text-sm text-muted-foreground">We'll send you a confirmation email</div>
+                            </div>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border-2 border-muted hover:border-primary/20 transition-colors cursor-pointer">
+                          <RadioGroupItem value="whatsapp" id="whatsapp" />
+                          <Label htmlFor="whatsapp" className="flex-1 cursor-pointer flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4 text-green-600" />
+                            <div>
+                              <div className="font-semibold">Send via WhatsApp</div>
+                              <div className="text-sm text-muted-foreground">Opens WhatsApp to send your message</div>
+                            </div>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
                     <Button 
                       type="submit" 
                       size="lg" 
                       className="w-full text-lg h-14 hover:scale-105 transition-transform duration-300"
                     >
-                      Submit Booking Request
+                      {sendMethod === "email" ? (
+                        <>
+                          <Mail className="mr-2 h-5 w-5" />
+                          Submit via Email
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle className="mr-2 h-5 w-5" />
+                          Send via WhatsApp
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Form>
