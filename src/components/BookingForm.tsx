@@ -49,29 +49,36 @@ const BookingForm = () => {
   const onSubmit = async (data: BookingFormValues) => {
     console.log("Booking submitted:", data);
     
-    // Send email via Resend
-    const emailResult = await sendBookingEmail({
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      service: data.service,
-      date: format(data.date, "PPP"),
-      time: data.time,
-      address: data.address,
-      message: data.message,
-    });
+    // Create WhatsApp message (always send this)
+    const whatsappMessage = `*New Service Booking*\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nService: ${data.service}\nPreferred Date: ${format(data.date, "PPP")}\nPreferred Time: ${data.time}\nAddress: ${data.address}\n${data.message ? `\nAdditional Notes: ${data.message}` : ''}`;
+    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
+    
+    // Try to send email via Resend (non-blocking)
+    try {
+      const emailResult = await sendBookingEmail({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        service: data.service,
+        date: format(data.date, "PPP"),
+        time: data.time,
+        address: data.address,
+        message: data.message,
+      });
 
-    if (emailResult.success) {
-      toast.success("Booking request sent! We'll contact you shortly.");
-    } else {
-      console.error("Email error details:", emailResult.error);
-      toast.error(`Email notification failed: ${emailResult.error || 'Unknown error'}. WhatsApp message sent instead.`);
+      if (emailResult.success) {
+        toast.success("Booking request sent via email and WhatsApp! We'll contact you shortly.");
+      } else {
+        console.warn("Email notification failed, but continuing with WhatsApp:", emailResult.error);
+        toast.success("Booking request sent via WhatsApp! We'll contact you shortly.");
+      }
+    } catch (emailError: any) {
+      console.warn("Email error (non-critical, continuing):", emailError);
+      // Don't show error toast, just continue with WhatsApp
+      toast.success("Booking request sent via WhatsApp! We'll contact you shortly.");
     }
     
-    // Create WhatsApp message
-    const message = `*New Service Booking*\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}\nService: ${data.service}\nPreferred Date: ${format(data.date, "PPP")}\nPreferred Time: ${data.time}\nAddress: ${data.address}\n${data.message ? `\nAdditional Notes: ${data.message}` : ''}`;
-    
-    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(message)}`;
+    // Always open WhatsApp
     window.open(whatsappUrl, '_blank');
     
     setIsSubmitted(true);

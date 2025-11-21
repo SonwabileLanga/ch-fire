@@ -12,7 +12,7 @@ const TO_EMAIL = 'langasonwabile1993@gmail.com';
 // Helper function to send email via Resend REST API
 const sendEmail = async (to: string[], subject: string, html: string, replyTo?: string) => {
   try {
-    const payload = {
+    const payload: any = {
       from: FROM_EMAIL,
       to: to,
       subject: subject,
@@ -24,6 +24,8 @@ const sendEmail = async (to: string[], subject: string, html: string, replyTo?: 
       payload.reply_to = replyTo;
     }
 
+    console.log('Sending email via Resend API...', { to, subject });
+
     const response = await fetch(RESEND_API_URL, {
       method: 'POST',
       headers: {
@@ -33,7 +35,14 @@ const sendEmail = async (to: string[], subject: string, html: string, replyTo?: 
       body: JSON.stringify(payload),
     });
 
-    const responseData = await response.json();
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (parseError) {
+      // If response is not JSON, get text
+      const text = await response.text();
+      throw new Error(`Invalid response: ${text}`);
+    }
 
     if (!response.ok) {
       console.error('Resend API Error:', {
@@ -41,13 +50,29 @@ const sendEmail = async (to: string[], subject: string, html: string, replyTo?: 
         statusText: response.statusText,
         error: responseData,
       });
-      throw new Error(responseData.message || responseData.error?.message || 'Failed to send email');
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        throw new Error('Invalid API key. Please check your Resend API key.');
+      } else if (response.status === 403) {
+        throw new Error('API key does not have permission to send emails.');
+      } else if (response.status === 422) {
+        throw new Error(responseData.message || 'Invalid email format or missing required fields.');
+      } else {
+        throw new Error(responseData.message || responseData.error?.message || `Failed to send email (${response.status})`);
+      }
     }
 
     console.log('Email sent successfully:', responseData);
     return responseData;
   } catch (error: any) {
     console.error('Email API error:', error);
+    
+    // Check for CORS errors
+    if (error.message?.includes('CORS') || error.message?.includes('fetch')) {
+      throw new Error('CORS error: Resend API may require server-side implementation. Email not sent, but form submitted.');
+    }
+    
     // Return more detailed error information
     throw new Error(error.message || 'Failed to send email. Please check console for details.');
   }

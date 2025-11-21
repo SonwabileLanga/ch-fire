@@ -62,35 +62,42 @@ const QuoteRequest = () => {
   const onSubmit = async (data: QuoteFormValues) => {
     console.log("Quote request submitted:", data);
     
-    // Send email via Resend
-    const emailResult = await sendQuoteEmail({
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      company: data.company,
-      propertyType: data.propertyType,
-      serviceType: data.serviceType,
-      propertySize: data.propertySize,
-      address: data.address,
-      city: data.city,
-      postalCode: data.postalCode,
-      urgency: data.urgency,
-      budget: data.budget,
-      timeline: data.timeline,
-      additionalInfo: data.additionalInfo,
-    });
+    // Create detailed quote message for WhatsApp (always send this)
+    const whatsappMessage = `*New Quote Request*\n\n*Contact Information:*\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}${data.company ? `\nCompany: ${data.company}` : ''}\n\n*Property Details:*\nType: ${data.propertyType}\nSize: ${data.propertySize}\nAddress: ${data.address}\nCity: ${data.city}\nPostal Code: ${data.postalCode}\n\n*Service Request:*\nService Type: ${data.serviceType}\nUrgency: ${data.urgency}${data.budget ? `\nBudget: ${data.budget}` : ''}${data.timeline ? `\nTimeline: ${data.timeline}` : ''}\n\n${data.additionalInfo ? `*Additional Information:*\n${data.additionalInfo}` : ''}`;
+    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(whatsappMessage)}`;
+    
+    // Try to send email via Resend (non-blocking)
+    try {
+      const emailResult = await sendQuoteEmail({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        company: data.company,
+        propertyType: data.propertyType,
+        serviceType: data.serviceType,
+        propertySize: data.propertySize,
+        address: data.address,
+        city: data.city,
+        postalCode: data.postalCode,
+        urgency: data.urgency,
+        budget: data.budget,
+        timeline: data.timeline,
+        additionalInfo: data.additionalInfo,
+      });
 
-    if (emailResult.success) {
-      toast.success("Quote request sent! We'll contact you within 24 hours.");
-    } else {
-      console.error("Email error details:", emailResult.error);
-      toast.error(`Email notification failed: ${emailResult.error || 'Unknown error'}. WhatsApp message sent instead.`);
+      if (emailResult.success) {
+        toast.success("Quote request sent via email and WhatsApp! We'll contact you within 24 hours.");
+      } else {
+        console.warn("Email notification failed, but continuing with WhatsApp:", emailResult.error);
+        toast.success("Quote request sent via WhatsApp! We'll contact you within 24 hours.");
+      }
+    } catch (emailError: any) {
+      console.warn("Email error (non-critical, continuing):", emailError);
+      // Don't show error toast, just continue with WhatsApp
+      toast.success("Quote request sent via WhatsApp! We'll contact you within 24 hours.");
     }
     
-    // Create detailed quote message
-    const message = `*New Quote Request*\n\n*Contact Information:*\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone}${data.company ? `\nCompany: ${data.company}` : ''}\n\n*Property Details:*\nType: ${data.propertyType}\nSize: ${data.propertySize}\nAddress: ${data.address}\nCity: ${data.city}\nPostal Code: ${data.postalCode}\n\n*Service Request:*\nService Type: ${data.serviceType}\nUrgency: ${data.urgency}${data.budget ? `\nBudget: ${data.budget}` : ''}${data.timeline ? `\nTimeline: ${data.timeline}` : ''}\n\n${data.additionalInfo ? `*Additional Information:*\n${data.additionalInfo}` : ''}`;
-    
-    const whatsappUrl = `https://wa.me/27619065523?text=${encodeURIComponent(message)}`;
+    // Always open WhatsApp
     window.open(whatsappUrl, '_blank');
     
     setIsSubmitted(true);
